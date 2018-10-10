@@ -1,33 +1,41 @@
-const nodemailer = require("nodemailer");
-const sendList = ["tanuj.aswani@gmail.com", "tanuj.aswani618@gmail.com"];
-const { account } = require("./authentication.js");
+const createError = require("http-errors");
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
 
-const transporter = nodemailer.createTransport({
-  service: "hotmail",
-  auth: {
-    user: account.user,
-    pass: account.pass
-  }
+const routes = require("./routes");
+
+const app = express();
+
+// view engine setup
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "pug");
+
+app.use(logger("dev"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, "public")));
+
+app.use("/", routes);
+
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  next(createError(404));
 });
 
-const mailOptions = {
-  from: "tanuj.aswani@hotmail.com",
-  to: sendList,
-  subject: "Testing 123",
-  text:
-    "This is a blast email with a generic message to send out to two different people.",
-  html: '<img src="cid:uniqueImage"/>',
-  attachments: [
-    {
-      filename: "scenery.jpeg",
-      path: "./scenery.jpeg",
-      cid: "uniqueID"
-    }
-  ]
-};
+// error handler
+app.use(function(err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get("env") === "development" ? err : {};
 
-transporter.sendMail(mailOptions, function(error) {
-  return error
-    ? console.log(error)
-    : console.log("Messages sent successfully!");
+  // render the error page
+  res.status(err.status || 500);
+  res.render("error");
 });
+
+app.listen(3000);
+
+module.exports = app;
